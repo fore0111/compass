@@ -4,24 +4,32 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Compass</title>
 <style>
-html,body{margin:0;height:100%;background:#111;color:#eee;font-family:sans-serif}
-body{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;overflow:hidden}
-#h{font-size:20vmin;font-weight:700;line-height:1}
-#c{font-size:8vmin;margin:1vmin 0 3vmin}
-#w{position:relative;width:80vmin;height:80vmin}
-#w:before{content:"";position:absolute;left:50%;top:-3vmin;margin-left:-2.5vmin;border:2.5vmin solid transparent;border-top:4vmin solid #fc0;border-bottom:0}
+html,body{margin:0;height:100%;background:#111;color:#fff;font-family:sans-serif}
+body{overflow:hidden;text-align:center}
+#v{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
+#t{position:fixed;left:0;right:0;top:0;padding-top:2vmin;text-shadow:0 0 2vmin #000,0 0 1vmin #000}
+#h{font-size:16vmin;font-weight:700;line-height:1}
+#c{font-size:7vmin}
+#w{position:relative;width:30vmin;height:30vmin;margin:5vmin auto 0;opacity:.6}
+#w:before{content:"";position:absolute;left:50%;top:-2vmin;margin-left:-1.5vmin;border:1.5vmin solid transparent;border-top:2.5vmin solid #fc0;border-bottom:0}
 svg{width:100%;height:100%;transition:transform .1s linear}
-#b{font-size:6vmin;padding:2vmin 6vmin;margin:2vmin;display:none}
-p{font-size:3.5vmin;color:#888;margin:3vmin 0 0}
+#b{font-size:6vmin;padding:2vmin 6vmin;position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);display:none}
+#s{position:fixed;left:50%;bottom:4vmin;width:18vmin;height:18vmin;margin-left:-9vmin;border-radius:50%;border:1.5vmin solid #fff;background:rgba(255,255,255,.85);padding:0;display:none}
+#s:active{background:#ccc}
+#f{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .3s}
+#m{position:fixed;left:0;right:0;bottom:26vmin;font-size:5vmin;text-shadow:0 0 1vmin #000;opacity:0;transition:opacity .3s}
+p{position:fixed;left:0;right:0;bottom:1vmin;margin:0;font-size:2.5vmin;color:#aaa;text-shadow:0 0 1vmin #000}
 </style>
-<div id="h">--</div>
-<div id="c"></div>
-<div id="w"><svg id="d" viewBox="-100 -100 200 200" fill="#ccc" stroke="#ccc" text-anchor="middle"></svg></div>
+<video id="v" autoplay playsinline muted></video>
+<div id="t"><div id="h">--</div><div id="c"></div>
+<div id="w"><svg id="d" viewBox="-100 -100 200 200" fill="#fff" stroke="#fff" text-anchor="middle"></svg></div></div>
 <button id="b">開始</button>
-<p>精度低下時は端末を8の字に動作</p>
+<button id="s" aria-label="撮影"></button>
+<div id="f"></div><div id="m"></div>
+<p>精度低下時は8の字に動作</p>
 <script>
-var $=function(i){return document.getElementById(i)},r=0,p=null,T,s='',D=DeviceOrientationEvent,
-N=['N','NE','E','SE','S','SW','W','NW'];
+var $=function(i){return document.getElementById(i)},r=0,p=null,T,s='',H=null,D=DeviceOrientationEvent,
+N=['N','NE','E','SE','S','SW','W','NW'],V=$('v'),S=$('s');
 for(var i=0;i<36;i++){var a=i*10,k=a%30<1;
 s+='<g transform="rotate('+a+')"><line y1="-96" y2="'+(k?-88:-92)+'"/>'+
 (k?'<text y="-80" font-size="7" stroke="none">'+a+'</text>':'')+
@@ -32,13 +40,40 @@ if(h==null){if(e.alpha==null)return;h=360-e.alpha}
 clearTimeout(T);
 h=((h+(screen.orientation?screen.orientation.angle:0))%360+360)%360;
 if(p!=null)r+=((h-p+540)%360)-180;else r=h;
-p=h;
+p=h;H=Math.round(h)%360;
 $('d').style.transform='rotate('+-r+'deg)';
-$('h').textContent=(Math.round(h)%360)+'°';
+$('h').style.fontSize='';
+$('h').textContent=H+'°';
 $('c').textContent=N[Math.round(h/45)%8]}
 function g(){addEventListener('ondeviceorientationabsolute' in window?'deviceorientationabsolute':'deviceorientation',f);
 T=setTimeout(function(){$('h').textContent='センサー未検出';$('h').style.fontSize='8vmin'},2000)}
 if(D&&D.requestPermission){var b=$('b');b.style.display='block';
 b.onclick=function(){D.requestPermission().then(function(x){if(x=='granted'){b.style.display='none';g()}})}}
-else g()
+else g();
+function z(n,l){return('000'+n).slice(-(l||2))}
+function toast(t){var m=$('m');m.textContent=t;m.style.opacity=1;setTimeout(function(){m.style.opacity=0},1200)}
+function shot(){
+var w=V.videoWidth,h=V.videoHeight;if(!w)return;
+var hd=H,hs=hd==null?'---':z(hd,3),cd=hd==null?'':N[Math.round(hd/45)%8],
+n=new Date(),ds=n.getFullYear()+'-'+z(n.getMonth()+1)+'-'+z(n.getDate()),
+ts=z(n.getHours())+':'+z(n.getMinutes())+':'+z(n.getSeconds()),
+c=document.createElement('canvas');c.width=w;c.height=h;
+var x=c.getContext('2d'),fs=Math.round(h/20),bh=fs*2;
+x.drawImage(V,0,0,w,h);
+x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,h-bh,w,bh);
+x.fillStyle='#fff';x.font='bold '+fs+'px sans-serif';x.textBaseline='middle';
+x.textAlign='left';x.fillText(hs+(hd==null?'':'°')+' '+cd,fs/2,h-bh/2);
+x.textAlign='right';x.fillText(ds+' '+ts,w-fs/2,h-bh/2);
+$('f').style.opacity=.8;setTimeout(function(){$('f').style.opacity=0},100);
+c.toBlob(function(B){if(!B){toast('保存失敗');return}
+var u=URL.createObjectURL(B),A=document.createElement('a');
+A.href=u;A.download='compass_'+ds.replace(/-/g,'')+'_'+ts.replace(/:/g,'')+'_'+hs+cd+'.jpg';
+document.body.appendChild(A);A.click();A.remove();
+setTimeout(function(){URL.revokeObjectURL(u)},10000);toast('保存')},'image/jpeg',.9)}
+S.onclick=shot;
+function ng(){$('m').textContent='カメラ使用不可';$('m').style.opacity=1}
+if(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia)
+navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920},height:{ideal:1080}},audio:false})
+.then(function(m){V.srcObject=m;S.style.display='block'},ng);
+else ng()
 </script>
