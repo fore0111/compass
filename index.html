@@ -10,6 +10,7 @@ body{overflow:hidden;text-align:center}
 #t{position:fixed;left:0;right:0;top:0;padding-top:2vmin;text-shadow:0 0 2vmin #000,0 0 1vmin #000}
 #h{font-size:16vmin;font-weight:700;line-height:1}
 #c{font-size:7vmin}
+#g{font-size:3.5vmin;margin-top:1vmin}
 #w{position:relative;width:30vmin;height:30vmin;margin:5vmin auto 0;opacity:.6}
 #w:before{content:"";position:absolute;left:50%;top:-2vmin;margin-left:-1.5vmin;border:1.5vmin solid transparent;border-top:2.5vmin solid #fc0;border-bottom:0}
 svg{width:100%;height:100%;transition:transform .1s linear}
@@ -21,7 +22,7 @@ svg{width:100%;height:100%;transition:transform .1s linear}
 p{position:fixed;left:0;right:0;bottom:1vmin;margin:0;font-size:2.5vmin;color:#aaa;text-shadow:0 0 1vmin #000}
 </style>
 <video id="v" autoplay playsinline muted></video>
-<div id="t"><div id="h">--</div><div id="c"></div>
+<div id="t"><div id="h">--</div><div id="c"></div><div id="g">位置未取得</div>
 <div id="w"><svg id="d" viewBox="-100 -100 200 200" fill="#fff" stroke="#fff" text-anchor="middle"></svg></div></div>
 <button id="b">開始</button>
 <button id="s" aria-label="撮影"></button>
@@ -29,7 +30,7 @@ p{position:fixed;left:0;right:0;bottom:1vmin;margin:0;font-size:2.5vmin;color:#a
 <p>精度低下時は8の字に動作</p>
 <script>
 var $=function(i){return document.getElementById(i)},r=0,p=null,T,s='',H=null,D=DeviceOrientationEvent,
-N=['N','NE','E','SE','S','SW','W','NW'],V=$('v'),S=$('s');
+L=null,N=['N','NE','E','SE','S','SW','W','NW'],V=$('v'),S=$('s');
 for(var i=0;i<36;i++){var a=i*10,k=a%30<1;
 s+='<g transform="rotate('+a+')"><line y1="-96" y2="'+(k?-88:-92)+'"/>'+
 (k?'<text y="-80" font-size="7" stroke="none">'+a+'</text>':'')+
@@ -50,6 +51,10 @@ T=setTimeout(function(){$('h').textContent='センサー未検出';$('h').style.
 if(D&&D.requestPermission){var b=$('b');b.style.display='block';
 b.onclick=function(){D.requestPermission().then(function(x){if(x=='granted'){b.style.display='none';g()}})}}
 else g();
+function lt(){return L?L.a.toFixed(6)+', '+L.o.toFixed(6)+' \u00b1'+Math.round(L.c)+'m':'位置未取得'}
+function ok(q){var k=q.coords;L={a:k.latitude,o:k.longitude,c:k.accuracy};$('g').textContent=lt()}
+function er(){L=null;$('g').textContent=lt()}
+if(navigator.geolocation)try{navigator.geolocation.watchPosition(ok,er,{enableHighAccuracy:true,maximumAge:5000})}catch(e){}
 function z(n,l){return('000'+n).slice(-(l||2))}
 function toast(t){var m=$('m');m.textContent=t;m.style.opacity=1;setTimeout(function(){m.style.opacity=0},1200)}
 function shot(){
@@ -58,16 +63,18 @@ var hd=H,hs=hd==null?'---':z(hd,3),cd=hd==null?'':N[Math.round(hd/45)%8],
 n=new Date(),ds=n.getFullYear()+'-'+z(n.getMonth()+1)+'-'+z(n.getDate()),
 ts=z(n.getHours())+':'+z(n.getMinutes())+':'+z(n.getSeconds()),
 c=document.createElement('canvas');c.width=w;c.height=h;
-var x=c.getContext('2d'),fs=Math.round(h/20),bh=fs*2;
+var x=c.getContext('2d'),fs=Math.round(Math.min(w,h)/28),lh=Math.round(fs*1.4),pd=Math.round(fs*.6),bh=lh*2+pd*2,
+l0=L,Ls=[hs+(hd==null?'':'°')+' '+cd+'  '+ds+' '+ts,lt()];
 x.drawImage(V,0,0,w,h);
 x.fillStyle='rgba(0,0,0,.55)';x.fillRect(0,h-bh,w,bh);
-x.fillStyle='#fff';x.font='bold '+fs+'px sans-serif';x.textBaseline='middle';
-x.textAlign='left';x.fillText(hs+(hd==null?'':'°')+' '+cd,fs/2,h-bh/2);
-x.textAlign='right';x.fillText(ds+' '+ts,w-fs/2,h-bh/2);
+x.fillStyle='#fff';x.textBaseline='middle';x.textAlign='left';
+Ls.forEach(function(t,i){var q=fs;x.font='bold '+q+'px sans-serif';
+var m=x.measureText(t).width;if(m>w-fs){q=Math.floor(q*(w-fs)/m);x.font='bold '+q+'px sans-serif'}
+x.fillText(t,fs/2,h-bh+pd+lh*(i+.5))});
 $('f').style.opacity=.8;setTimeout(function(){$('f').style.opacity=0},100);
 c.toBlob(function(B){if(!B){toast('保存失敗');return}
 var u=URL.createObjectURL(B),A=document.createElement('a');
-A.href=u;A.download='compass_'+ds.replace(/-/g,'')+'_'+ts.replace(/:/g,'')+'_'+hs+cd+'.jpg';
+A.href=u;A.download='compass_'+ds.replace(/-/g,'')+'_'+ts.replace(/:/g,'')+'_'+hs+cd+(l0?'_'+l0.a.toFixed(6)+'_'+l0.o.toFixed(6):'')+'.jpg';
 document.body.appendChild(A);A.click();A.remove();
 setTimeout(function(){URL.revokeObjectURL(u)},10000);toast('保存')},'image/jpeg',.9)}
 S.onclick=shot;
